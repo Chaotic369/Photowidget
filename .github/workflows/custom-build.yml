@@ -21,6 +21,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Locate Android project
+        run: |
+          MANIFEST="$(find . -type f -path '*/app/src/main/AndroidManifest.xml' -not -path '*/build/*' | head -n 1)"
+          if [ -z "$MANIFEST" ]; then
+            echo "::error::Could not find app/src/main/AndroidManifest.xml anywhere in the repo"
+            find . -maxdepth 3 -not -path './.git/*' | head -50
+            exit 1
+          fi
+          PROJECT_DIR="${MANIFEST%/app/src/main/AndroidManifest.xml}"
+          echo "Found Android project in: $PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -33,6 +45,7 @@ jobs:
           gradle-version: "8.7"
 
       - name: Patch app name and version
+        working-directory: ${{ env.PROJECT_DIR }}
         env:
           APP_NAME: ${{ inputs.app_name }}
           APP_VERSION: ${{ inputs.app_version }}
@@ -99,13 +112,15 @@ jobs:
           PY
 
       - name: Apply custom icon (optional)
+        working-directory: ${{ env.PROJECT_DIR }}
         run: |
-          if [ -f build-icon.png ]; then
+          ICON="$GITHUB_WORKSPACE/build-icon.png"
+          if [ -f "$ICON" ]; then
             echo "build-icon.png found, applying as launcher icon"
             for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
               mkdir -p "app/src/main/res/mipmap-$d"
-              cp build-icon.png "app/src/main/res/mipmap-$d/ic_launcher.png"
-              cp build-icon.png "app/src/main/res/mipmap-$d/ic_launcher_round.png"
+              cp "$ICON" "app/src/main/res/mipmap-$d/ic_launcher.png"
+              cp "$ICON" "app/src/main/res/mipmap-$d/ic_launcher_round.png"
             done
             python3 - <<'PY'
           import re
@@ -133,11 +148,12 @@ jobs:
           fi
 
       - name: Build debug APK
+        working-directory: ${{ env.PROJECT_DIR }}
         run: gradle assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Android-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
