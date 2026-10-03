@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Photo Widget</string>
+    <string name="add_photos">Add photos</string>
+    <string name="add_widget">Add widget to home screen</string>
+    <string name="next">Next photo</string>
+    <string name="clear">Clear all</string>
+    <string name="importing">Importing…</string>
+    <string name="added_n">Added %1$d photo(s)</string>
+    <string name="widget_empty">Tap the gear to add photos</string>
+    <string name="pin_manual">Long-press your home screen → Widgets → Photo Widget</string>
+    <plurals name="photo_count">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+</resources>
